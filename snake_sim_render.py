@@ -25,7 +25,7 @@ from tqdm import tqdm
 from _pov_macros import Stages, pyelastica_rod, render
 
 # Setup (USER DEFINE)
-DATA_PATH = "continuum_snake.dat"  # Path to the simulation data
+DATA_PATH = "dataset/snake.dat"  # Path to the simulation data
 SAVE_PICKLE = True
 
 # Rendering Configuration (USER DEFINE)
@@ -47,36 +47,40 @@ stages.add_camera(
 )
 stages.add_camera(
     # Add top viewpoint
-    location=[0, 15, 3],
+    location=[0, 15, 0],
     angle=30,
-    look_at=[0.0, 0, 3],
-    sky=[-1, 0, 0],
+    look_at=[0.0, 0, 0],
     name="top",
 )
 stages.add_light(
     # Sun light
     position=[1500, 2500, -1000],
-    color="White",
+    color=[1,1,1],
     camera_id=-1,
 )
 stages.add_light(
     # Flash light for camera 0
     position=[15.0, 10.5, -15.0],
-    color=[0.09, 0.09, 0.1],
+    color=[1,1,1],
     camera_id=0,
 )
 stages.add_light(
     # Flash light for camera 1
     position=[0.0, 8.0, 5.0],
-    color=[0.09, 0.09, 0.1],
+    color=[1,1,1],
     camera_id=1,
+)
+stages.add_background(
+    color=[0.,0.,0.]
 )
 stage_scripts = stages.generate_scripts()
 
 # Externally Including Files (USER DEFINE)
 # If user wants to include other POVray objects such as grid or coordinate axes,
 # objects can be defined externally and included separately.
-included = ["default.inc"]
+cwd = os.getcwd()
+color_path = "colors.inc"
+included = [color_path]
 
 # Multiprocessing Configuration (USER DEFINE)
 MULTIPROCESSING = True
@@ -140,7 +144,7 @@ if __name__ == "__main__":
             rod_object = pyelastica_rod(
                 x=xs[frame_number],
                 r=base_radius[frame_number],
-                color="rgb<0.45,0.39,1>",
+                color="rgb<0.5,0,0>",
             )
             script.append(rod_object)
             pov_script = "\n".join(script)
@@ -186,6 +190,6 @@ if __name__ == "__main__":
             if path[-3:] == "png"
         ]
         imageset.sort()
-        filename = OUTPUT_FILENAME + "_" + view_name + ".mp4"
+        filename = "frames/" + OUTPUT_FILENAME + "_" + view_name + ".mp4"
         clip = ImageSequenceClip(imageset, fps=FPS)
         clip.write_videofile(filename, fps=FPS)

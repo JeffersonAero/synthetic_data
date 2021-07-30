@@ -32,13 +32,13 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     base_length = 1.0
     base_radius = 0.025
     base_area = np.pi * base_radius ** 2
-    density = 1000
+    density = 8000
     nu = 5.0
     E = 1e7
-    poisson_ratio = 0.5
+    poisson_ratio = 0.3
 
     # Create rod
-    shearable_rod = CosseratRod.straight_rod(
+    rod = CosseratRod.straight_rod(
         n_elem,
         start,
         direction,
@@ -52,11 +52,11 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     )
 
     # Add rod to the snake system
-    snake_sim.append(shearable_rod)
+    snake_sim.append(rod)
 
     # Add gravitational forces
     gravitational_acc = -9.80665
-    snake_sim.add_forcing_to(shearable_rod).using(
+    snake_sim.add_forcing_to(rod).using(
         GravityForces, acc_gravity=np.array([0.0, gravitational_acc, 0.0])
     )
     print('Gravity now acting on shearable rod')
@@ -64,17 +64,17 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     # Define muscle torque parameters
     period = 1.0
     wave_length = 0.97
-    b_coeff=np.array([17.4, 48.5, 5.4, 14.7])
+    # b_coeff=np.array([17.4, 48.5, 5.4, 14.7])
 
     # Add muscle torques to the rod
-    snake_sim.add_forcing_to(shearable_rod).using(
+    snake_sim.add_forcing_to(rod).using(
         MuscleTorques,
         base_length=base_length,
         b_coeff=b_coeff,
         period=period,
         wave_number=2.0 * np.pi / (wave_length),
         phase_shift=0.0,
-        rest_lengths=shearable_rod.rest_lengths,
+        rest_lengths=rod.rest_lengths,
         ramp_up_time=period,
         direction=normal,
         with_spline=True,
@@ -91,7 +91,7 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     static_mu_array = 2 * kinetic_mu_array
 
     # Add friction forces to the rod
-    snake_sim.add_forcing_to(shearable_rod).using(
+    snake_sim.add_forcing_to(rod).using(
         AnisotropicFrictionalPlane,
         k=1.0,
         nu=1e-6,
@@ -102,22 +102,6 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
         kinetic_mu_array=kinetic_mu_array,
     )
     print('Friction forces added to the rod')
-
-    # Start into the plane
-    unshearable_start = np.array([0.0, -1.0, 0.0])
-    unshearable_rod = CosseratRod.straight_rod(
-        n_elem,
-        unshearable_start,
-        direction,
-        normal,
-        base_length,
-        base_radius,
-        density,
-        nu,
-        E,
-        # Unshearable rod needs G -> inf, which is achievable with a poisson ratio of -1.0
-        poisson_ratio=-0.85,
-    )
 
     # Add call backs
     class ContinuumSnakeCallBack(CallBackBaseClass):
@@ -153,7 +137,7 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
                 return
 
     pp_list = defaultdict(list)
-    snake_sim.collect_diagnostics(shearable_rod).using(
+    snake_sim.collect_diagnostics(rod).using(
         ContinuumSnakeCallBack, step_skip=200, callback_params=pp_list)
     print('Callback function added to the simulator')
 
@@ -171,7 +155,7 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     if SAVE_RESULTS:
         import pickle
 
-        filename = "continuum_snake.dat"
+        filename = "dataset/snake.dat"
         file = open(filename, "wb")
         pickle.dump(pp_list, file)
         file.close()
@@ -207,7 +191,8 @@ if __name__ == "__main__":
     SAVE_RESULTS = True
 
     # Add muscle forces on the rod
-    t_coeff_optimized = np.array([17.4, 48.5, 5.4, 14.7, 0.97])
+    # t_coeff_optimized = np.array([17.4, 48.5, 5.4, 14.7, 0.97])
+    t_coeff_optimized = np.array([50, 12, -20, 2, 100])
 
     # run the simulation
     pp_list = snake_sim(t_coeff_optimized, SAVE_RESULTS)

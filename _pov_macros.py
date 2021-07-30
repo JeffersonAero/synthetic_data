@@ -10,7 +10,7 @@ from collections import defaultdict
 def pyelastica_rod(
     x,
     r,
-    color="rgb<0.45,0.39,1>",
+    color="rgb<1,0,1>",
     transmit=0.0,
     interpolation="linear_spline",
     deform=None,
@@ -154,12 +154,14 @@ class Stages:
     -------
     add_camera : Add new camera (viewpoint) to the stage.
     add_light : Add new light source to the stage for a assigned camera.
+    add_background : Modify the background color for the scene
     generate_scripts : Generate list of povray script for each camera.
     Class Objects
     -------------
     StageObject
     Camera
     Light
+    Background
     Properties
     ----------
     len : number of camera
@@ -171,6 +173,7 @@ class Stages:
         self.post_scripts = post_scripts
         self.cameras = []
         self.lights = []
+        self.background = []
         self._light_assign = defaultdict(list)
 
     def add_camera(self, name, **kwargs):
@@ -197,21 +200,27 @@ class Stages:
         else:
             raise NotImplementedError("camera_id can only be a list or int")
 
+    def add_background(self, **kwargs):
+        self.background.append(self.Background(**kwargs))
+
     def generate_scripts(self):
         """Generate pov-ray script for all camera setup
         Returns
         -------
         scripts : list
-            Return list of pov-scripts (string) that includes camera and assigned lightings.
+            Return list of pov-scripts (string) that includes camera, background, and assigned lightings.
         """
         scripts = {}
+
         for idx, camera in enumerate(self.cameras):
-            light_ids = self._light_assign[idx] + self._light_assign[-1]
             cmds = []
+            light_ids = self._light_assign[idx] + self._light_assign[-1]
             cmds.append(self.pre_scripts)
             cmds.append(str(camera))  # Script camera
             for light_id in light_ids:  # Script Lightings
                 cmds.append(str(self.lights[light_id]))
+            for _, bg in enumerate(self.background):
+                cmds.append(str(bg)) # Script background
             cmds.append(self.post_scripts)
             scripts[camera.name] = "\n".join(cmds)
         return scripts
@@ -328,6 +337,26 @@ class Stages:
             cmds = []
             cmds.append("light_source{")
             cmds.append(f"    {position}")
+            cmds.append(f"    color {color}")
+            cmds.append("}")
+            self.str = "\n".join(cmds)
+
+    class Background(StageObject):
+        """Background object
+        Attributes
+        ----------
+        color : list or tuple
+            Color of the scene background (length=3)
+        """
+
+        def __init__(self, color):
+            self.color = color
+            super().__init__()
+
+        def update_script(self):
+            color = self._color2str(self.color)
+            cmds = []
+            cmds.append("background{")
             cmds.append(f"    color {color}")
             cmds.append("}")
             self.str = "\n".join(cmds)

@@ -88,7 +88,7 @@ light_source {
              }
  
 //Background
-background { color srgb <1,1,1>  }
+background { color srgb <0,0,0>  }
  
 //Assembled object that is contained in ISS_Interior_USOnly_TexturesPacked_POV_geom.inc with no SSLT components
 //object{

@@ -1,19 +1,22 @@
-#include "default.inc"
+#include "colors.inc"
 
 camera{
-    location <0,15,3>
+    location <0,15,0>
     angle 30
-    look_at <0.0,0,3>
-    sky <-1,0,0>
+    look_at <0.0,0,0>
+    sky <0,1,0>
     right x*image_width/image_height
 }
 light_source{
     <0.0,8.0,5.0>
-    color rgb<0.09,0.09,0.1>
+    color rgb<1,1,1>
 }
 light_source{
     <1500,2500,-1000>
-    color White
+    color rgb<1,1,1>
+}
+background{
+    color rgb<0.0,0.0,0.0>
 }
 
 sphere_sweep {
@@ -70,7 +73,7 @@ sphere_sweep {
     ,<0.0,0.0,0.98>,0.05
     ,<0.0,0.0,1.0>,0.05
     texture{
-        pigment{ color rgb<0.45,0.39,1> transmit 0.000000 }
+        pigment{ color rgb<0.5,0,0> transmit 0.000000 }
         finish{ phong 1 }
     }
     }
