@@ -15,6 +15,12 @@ Synthetic data generation using POV-Ray and PyElastica.
 
 To run POV-Ray, call `povray filename.pov` on a povray file. This will produce `filename.png`, an image rendered from settings specified in `filename.pov`.
 
+### Install PyElastica
+
+`pip install pyelastica`
+
+* Note: PyElastica requires Python 3.
+
 ### Synthetic Dataset Generation File Structure
 
 ```
