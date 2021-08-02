@@ -19,19 +19,19 @@ To run POV-Ray, call `povray filename.pov` on a povray file. This will produce `
 
 ```
 synthetic_data/
-    ├── dataset/							# all data and labels live here
-    │   ├── file 1.png  					# files and file types description				
+    ├── dataset/                            # all data and labels live here
+    │   ├── file 1.png                      # files and file types description				
     ├── frames/
-    │   ├── movie1.mp4                  	# PyElastica wire simulation video
-    │   ├── movie2.mp4		            	# example first-frame labeled part pose .json
+    │   ├── movie1.mp4                      # PyElastica wire simulation video
+    │   ├── movie2.mp4                      # example first-frame labeled part pose .json
     │   │
     │   │
     │   │
-    │   └── movie100.mp4  		
-    ├── models/								# POV-Ray Models
-    │   ├── file1.extension	                
+    │   └── movie100.mp4
+    ├── models/                             # POV-Ray Models
+    │   ├── file1.extension
     │   └── file2.extention
-    ├── textures/							# POV-Ray textures
+    ├── textures/                           # POV-Ray textures
     │   ├── file1.png
     │   └── file2.png
     ├── file.extension                      # other files in main directory
