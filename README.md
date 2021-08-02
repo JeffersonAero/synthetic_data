@@ -19,7 +19,13 @@ To run POV-Ray, call `povray filename.pov` on a povray file. This will produce `
 
 `pip install pyelastica`
 
-* Note: PyElastica requires Python 3.
+\* Note: PyElastica requires Python 3.
+
+### Install Vapory
+
+`pip install vapory`
+
+\* Note: Vapory requires either Python 2.7+ or Python 3.
 
 ### Synthetic Dataset Generation File Structure
 
@@ -44,8 +50,10 @@ synthetic_data/
 
 ### Simulation and Rendering with PyElastica+POV-Ray
 
-Description of files and commands used to simulate deformable object physics with PyElastica and render the simulation with POV-Ray
+PyElastica was used to simulate a wire snake in `snake_sim.py`. This simulation produces `dataset/snake.dat`, which is used by `snake_sim_render.py` for simulation rendering in POV-Ray. All POV-Ray python macros used for PyElastica rendering are provided in `_pov_macros.py`.
+
+Additional deformable object simulation examples are provided by [GazzolaLab/Pyelastica](https://github.com/GazzolaLab/PyElastica/tree/master/examples).
 
 ### Rendering Splines with Vapory
 
-Description of spline rendering without physics using vapory python library
+[Vapory](https://github.com/Zulko/vapory) performs POV-Ray rendering with Python commands. An example using Vapory to specify and render a cubic spline-specified wire is provided in `vapory_image_creation.py`. This script renders a wire in the ISS and against a black background. It also provides a segmentation mask for the wire. These example images are produced in the `dataset\` directory.
