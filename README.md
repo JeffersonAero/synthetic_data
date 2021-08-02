@@ -37,3 +37,11 @@ synthetic_data/
     ├── file.extension                      # other files in main directory
     └── README.md                           # description of contents
 ```
+
+### Simulation and Rendering with PyElastica+POV-Ray
+
+Description of files and commands used to simulate deformable object physics with PyElastica and render the simulation with POV-Ray
+
+### Rendering Splines with Vapory
+
+Description of spline rendering without physics using vapory python library
