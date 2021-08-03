@@ -1,6 +1,5 @@
 # Ignore the following folders:
 
 __pycache__
-diag
-top
+frames
 

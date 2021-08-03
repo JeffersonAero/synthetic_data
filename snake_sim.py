@@ -2,7 +2,7 @@ import numpy as np
 import os
 
 # import wrappers
-from elastica.wrappers import BaseSystemCollection, Constraints, Forcing, CallBacks
+from elastica.wrappers import BaseSystemCollection, Constraints, Connections, Forcing, CallBacks
 
 # import rod class and forces to be applied
 from elastica.rod.cosserat_rod import CosseratRod
@@ -17,7 +17,7 @@ from elastica.timestepper import integrate
 from elastica.callback_functions import CallBackBaseClass
 from collections import defaultdict
 
-class SnakeSimulator(BaseSystemCollection, Constraints, Forcing, CallBacks):
+class SnakeSimulator(BaseSystemCollection, Constraints, Connections, Forcing, CallBacks):
     pass
 
 def snake_sim(b_coeff, SAVE_RESULTS=False):
@@ -25,11 +25,13 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     snake_sim = SnakeSimulator()
 
     # Define rod parameters
-    n_elem = 50
-    start = np.array([0.0, 0.0, 0.0])
+    n_elem = 6
+    base_length = 0.5
+    start1 = np.array([0.0, 0.0, 0.0])
+    start2 = np.array([start1[0]+base_length, 0.0, 0.0])
     direction = np.array([0.0, 0.0, 1.0])
     normal = np.array([0.0, 1.0, 0.0])
-    base_length = 1.0
+    base_length = 0.5
     base_radius = 0.025
     base_area = np.pi * base_radius ** 2
     density = 8000
@@ -38,9 +40,21 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     poisson_ratio = 0.3
 
     # Create rod
-    rod = CosseratRod.straight_rod(
+    rod1 = CosseratRod.straight_rod(
         n_elem,
-        start,
+        start1,
+        direction,
+        normal,
+        base_length,
+        base_radius,
+        density,
+        nu,
+        E,
+        poisson_ratio,
+    )
+    rod2 = CosseratRod.straight_rod(
+        n_elem,
+        start2,
         direction,
         normal,
         base_length,
@@ -52,11 +66,28 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     )
 
     # Add rod to the snake system
-    snake_sim.append(rod)
+    snake_sim.append(rod1)
+    snake_sim.append(rod2)
+
+    snake_sim.connect(
+        first_rod  = rod1, 
+        second_rod = rod2, 
+        first_connect_idx  = -1, # Connect to the last node of the first rod. 
+        second_connect_idx =  0  # Connect to first node of the second rod. 
+        ).using(
+            FixedJoint,  # Type of connection between rods
+            k  = 1e5,    # Spring constant of force holding rods together (F = k*x)
+            nu = 0,      # Energy dissipation of joint
+            kt = 5e3     # Rotational stiffness of rod to avoid rods twisting
+            )
 
     # Add gravitational forces
     gravitational_acc = -9.80665
-    snake_sim.add_forcing_to(rod).using(
+    snake_sim.add_forcing_to(rod1).using(
+        GravityForces, acc_gravity=np.array([0.0, gravitational_acc, 0.0])
+    )
+    gravitational_acc = -9.80665
+    snake_sim.add_forcing_to(rod1).using(
         GravityForces, acc_gravity=np.array([0.0, gravitational_acc, 0.0])
     )
     print('Gravity now acting on shearable rod')
@@ -67,7 +98,20 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     # b_coeff=np.array([17.4, 48.5, 5.4, 14.7])
 
     # Add muscle torques to the rod
-    snake_sim.add_forcing_to(rod).using(
+    snake_sim.add_forcing_to(rod1).using(
+        MuscleTorques,
+        base_length=base_length,
+        b_coeff=b_coeff,
+        period=period,
+        wave_number=2.0 * np.pi / (wave_length),
+        phase_shift=0.0,
+        rest_lengths=rod.rest_lengths,
+        ramp_up_time=period,
+        direction=normal,
+        with_spline=True,
+    )
+
+    snake_sim.add_forcing_to(rod2).using(
         MuscleTorques,
         base_length=base_length,
         b_coeff=b_coeff,
@@ -91,7 +135,17 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
     static_mu_array = 2 * kinetic_mu_array
 
     # Add friction forces to the rod
-    snake_sim.add_forcing_to(rod).using(
+    snake_sim.add_forcing_to(rod1).using(
+        AnisotropicFrictionalPlane,
+        k=1.0,
+        nu=1e-6,
+        plane_origin=origin_plane,
+        plane_normal=normal_plane,
+        slip_velocity_tol=slip_velocity_tol,
+        static_mu_array=static_mu_array,
+        kinetic_mu_array=kinetic_mu_array,
+    )
+    snake_sim.add_forcing_to(rod2).using(
         AnisotropicFrictionalPlane,
         k=1.0,
         nu=1e-6,
@@ -136,9 +190,12 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
 
                 return
 
-    pp_list = defaultdict(list)
-    snake_sim.collect_diagnostics(rod).using(
-        ContinuumSnakeCallBack, step_skip=200, callback_params=pp_list)
+    callback_data_rod1, callback_data_rod2 = defaultdict(list), defaultdict(list)
+
+    snake_sim.collect_diagnostics(rod1).using(
+        ContinuumSnakeCallBack, step_skip=200, callback_params=callback_data_rod1)
+    snake_sim.collect_diagnostics(rod2).using(
+        ContinuumSnakeCallBack, step_skip=200, callback_params=callback_data_rod2)
     print('Callback function added to the simulator')
 
     snake_sim.finalize()
@@ -157,10 +214,11 @@ def snake_sim(b_coeff, SAVE_RESULTS=False):
 
         filename = "dataset/snake.dat"
         file = open(filename, "wb")
-        pickle.dump(pp_list, file)
+        pickle.dump(callback_data_rod1, file)
+        pickle.dump(callback_data_rod2, file)
         file.close()
     
-    return pp_list
+    return callback_data_rod1, callback_data_rod2
 
 def plot_video( plot_params: dict, video_name="video.mp4", margin=0.2, fps=15):  
     from matplotlib import pyplot as plt
@@ -195,4 +253,4 @@ if __name__ == "__main__":
     t_coeff_optimized = np.array([50, 12, -20, 2, 100])
 
     # run the simulation
-    pp_list = snake_sim(t_coeff_optimized, SAVE_RESULTS)
+    callback_data_rod1, callback_data_rod2 = snake_sim(t_coeff_optimized, SAVE_RESULTS)
